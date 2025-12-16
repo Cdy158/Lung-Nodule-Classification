@@ -6,7 +6,7 @@ from skimage.feature import hog
 import joblib
 
 # --- Configuration ---
-MODEL_PATH = "hog_svm_model.pkl"
+MODEL_PATH = "model.pkl"
 IMAGE_SIZE = (128, 128)
 HOG_PARAMS = {
     "orientations": 9,
