@@ -1,6 +1,6 @@
 import streamlit as st
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps, ImageDraw
 from skimage.feature import hog
 import joblib
 
@@ -33,19 +33,37 @@ def extract_hog_features(image_array):
 # --- UI ---
 st.set_page_config(page_title="Lung Nodule Classifier", layout="centered")
 st.title("🫁 Lung Nodule Classifier")
-st.write("Upload a **128×128 grayscale CT patch**.")
+st.write("Upload a **128×128 grayscale CT patch** for classification.")
 
 uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
+    # Load and resize image
     image = Image.open(uploaded_file).convert("L")
-    st.image(image, caption="Uploaded Image", width=200)
-    
     image = image.resize(IMAGE_SIZE, Image.Resampling.LANCZOS)
     img_array = np.array(image)
     
+    # Run prediction
     features = extract_hog_features(img_array)
-    pred = model.predict(features)[0]  # ← Only .predict() used
+    pred = model.predict(features)[0]
     
-    label = "🟢 **Non-Nodule**" if pred == 0 else "🔴 **Nodule**"
-    st.subheader(f"Prediction: {label}")
+    # Prepare annotated image
+    image_annotated = image.copy()
+    draw = ImageDraw.Draw(image_annotated)
+    
+    if pred == 1:  # Nodule → add red border
+        draw.rectangle([(0, 0), (127, 127)], outline="red", width=4)
+        label = "🔴 **Nodule Detected**"
+    else:
+        draw.rectangle([(0, 0), (127, 127)], outline="green", width=4)
+        label = "🟢 **Non-Nodule**"
+    
+    # Display results
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.image(image, caption="Original Patch", use_column_width=True)
+    with col2:
+        st.image(image_annotated, caption="Classification Result", use_column_width=True)
+    
+    st.subheader(label)
