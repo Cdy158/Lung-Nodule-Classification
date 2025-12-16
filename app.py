@@ -33,19 +33,29 @@ def extract_hog_features(image_array):
 # --- UI ---
 st.set_page_config(page_title="Lung Nodule Classifier", layout="centered")
 st.title("🫁 Lung Nodule Classifier")
-st.write("Upload a **128×128 grayscale CT patch**.")
+st.write("Upload a **128×128 grayscale CT patch** for classification.")
 
 uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("L")
-    st.image(image, caption="Uploaded Image", width=200)
+    # Load image
+    image = Image.open(uploaded_file).convert("L")  # Grayscale
     
+    # Resize to 128x128 (important!)
     image = image.resize(IMAGE_SIZE, Image.Resampling.LANCZOS)
     img_array = np.array(image)
     
+    # Extract HOG features (just like your code)
     features = extract_hog_features(img_array)
-    pred = model.predict(features)[0]  # ← Only .predict() used
     
-    label = "🟢 **Non-Nodule**" if pred == 0 else "🔴 **Nodule**"
-    st.subheader(f"Prediction: {label}")
+    # Predict
+    pred = model.predict(features)[0]
+    
+    # Display result
+    if pred == 1:
+        st.markdown("### Prediction: 🔴 **Nodule**")
+    else:
+        st.markdown("### Prediction: 🟢 **Non-Nodule**")
+    
+    # Show image
+    st.image(image, caption="Uploaded Patch (128x128)", use_column_width=True)
