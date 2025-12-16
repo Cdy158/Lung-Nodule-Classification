@@ -1,8 +1,8 @@
 import streamlit as st
 import numpy as np
-from PIL import Image, ImageDraw
-import joblib
+from PIL import Image
 from skimage.feature import hog
+import joblib
 
 # --- Configuration ---
 MODEL_PATH = "model.pkl"
@@ -33,46 +33,19 @@ def extract_hog_features(image_array):
 # --- UI ---
 st.set_page_config(page_title="Lung Nodule Classifier", layout="centered")
 st.title("🫁 Lung Nodule Classifier")
-st.write("Upload a **128×128 grayscale CT patch** (nodule expected near center).")
+st.write("Upload a **128×128 grayscale CT patch**.")
 
 uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
-    # Load and resize
     image = Image.open(uploaded_file).convert("L")
+    st.image(image, caption="Uploaded Image", width=200)
+    
     image = image.resize(IMAGE_SIZE, Image.Resampling.LANCZOS)
     img_array = np.array(image)
     
-    # Predict
     features = extract_hog_features(img_array)
-    pred = model.predict(features)[0]
+    pred = model.predict(features)[0]  # ← Only .predict() used
     
-    # Create annotated image
-    image_annotated = image.convert("RGB")
-    draw = ImageDraw.Draw(image_annotated)
-    
-    if pred == 1:  # Nodule → mark center
-        center = (64, 64)  # center of 128x128
-        radius = 10
-        # Draw red circle
-        draw.ellipse(
-            (center[0]-radius, center[1]-radius, center[0]+radius, center[1]+radius),
-            outline="red",
-            width=2
-        )
-        # Draw red crosshair (optional)
-        draw.line([(64, 54), (64, 74)], fill="red", width=2)  # vertical
-        draw.line([(54, 64), (74, 64)], fill="red", width=2)  # horizontal
-        
-        label = "🔴 **Nodule Detected** (center assumed)"
-    else:
-        label = "🟢 **Non-Nodule**"
-    
-    # Display
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(image, caption="Original", use_column_width=True)
-    with col2:
-        st.image(image_annotated, caption="Prediction", use_column_width=True)
-    
-    st.subheader(label)
+    label = "🟢 **Non-Nodule**" if pred == 0 else "🔴 **Nodule**"
+    st.subheader(f"Prediction: {label}")
